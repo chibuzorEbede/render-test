@@ -1,31 +1,9 @@
+require("dotenv").config(); //add this line so you can access the variables in the .env file
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config(); //add this line so you can access the variables in the .env file
 
-//setup the mongo db
-const mongoose = require("mongoose");
-
-//get mongodb url details from environment variable
-const url = process.env.MONGODB_URI;
-
-mongoose.set("strictQuery", false);
-mongoose.connect(url);
-
-const noteSchema = new mongoose.Schema({
-  content: String,
-  important: Boolean,
-});
-
-// //transform the returned notes object to suit our needs
-noteSchema.set("toJSON", {
-  transform: (document, returnedObject) => {
-    returnedObject.id = returnedObject._id.toString();
-    delete returnedObject._id;
-    delete returnedObject.__v;
-  },
-});
-
-const Note = mongoose.model("Note", noteSchema);
+//get the note model from the db
+const Note = require("./models/note");
 
 //setup the app
 const app = express();
@@ -35,36 +13,6 @@ app.use(express.urlencoded({ extended: false }));
 
 //parse application/json
 app.use(express.json());
-
-//create local notes variables
-let notes = [
-  {
-    id: "1",
-    content: "HTML is easy",
-    important: true,
-  },
-  {
-    id: "2",
-    content: "Browser can execute only JavaScript",
-    important: false,
-  },
-  {
-    id: "3",
-    content: "GET and POST are the most important methods of HTTP protocol",
-    important: true,
-  },
-  {
-    id: "4",
-    content: "GET and POST are the most important methods of HTTP protocol",
-    important: true,
-  },
-];
-
-//generate user id
-const getId = (arr) => {
-  const id = arr.length > 0 ? Math.max(...arr.map((el) => Number(el.id))) : 0;
-  return String(id + 1);
-};
 
 //custom middleware
 
@@ -103,16 +51,18 @@ app.get("/api/notes/", (request, response) => {
 //GET/id ==> get a single note {takes a note id and returns a note resource}
 app.get("/api/notes/:id", (request, response) => {
   const id = request.params.id;
-  const note = notes.find((note) => note.id === id);
-
-  if (note) {
-    response.json(note);
-  } else {
-    //set a status message to be displayed beside the http error code
-    response.statusMessage = `file with id: ${id} not found`;
-    //set the status code foe resource not found
-    response.status(404).end();
-  }
+  Note.find({ _id: id })
+    .then((note) => {
+      if (note.length !== 0) {
+        response.json(note);
+      } else {
+        //set a status message to be displayed beside the http error code
+        response.statusMessage = `file with id: ${id} not found`;
+        //set the status code foe resource not found
+        response.status(404).end();
+      }
+    })
+    .catch((err) => console.log("error: ", err));
 });
 
 //create a new note resource
@@ -121,34 +71,34 @@ app.post("/api/notes", (request, response) => {
   const data = request.body;
 
   //check if note is empty
-  if (!data.content) {
+  if (!data.content || data.content === undefined) {
     return response.status(400).json({ error: "content missing" });
   }
   //build the note
-  const note = {
-    id: getId(notes),
+  const note = new Note({
     content: data.content,
     important: Boolean(data.important) || false,
-  };
-  //add the new note to the old notes array
-  notes = notes.concat(note);
-
-  //send a response
-  response.json(note);
+  });
+  note.save().then((savedNote) => {
+    response.json(savedNote);
+  });
 });
 
 //DELETE/id ==> delete a single note {takes a note id and returns the removed note resource}
 app.delete("/api/notes/:id", (request, response) => {
   const id = request.params.id;
-  notes = notes.filter((note) => note.id !== id);
-
-  response.status(204).end();
+  Note.findByIdAndDelete(id)
+    .then((result) => {
+      console.log(`deleted item with id: ${id}`);
+      response.status(204).end();
+    })
+    .catch((err) => response.json({ error: err }));
 });
 
 app.use(unknownEndpoint);
 
 //set port and listen
-const PORT = process.env.PORT || 3030;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`server running on port: ${PORT}`);
 });

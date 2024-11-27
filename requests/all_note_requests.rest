@@ -1,0 +1,19 @@
+POST http://localhost:3030/api/notes
+Content-Type: application/json
+
+{
+    
+    "content": "what is the nature of reality?",
+    "important": false
+}
+
+###
+
+GET http://localhost:3030/api/notes
+
+###
+GET http://localhost:3030/api/notes/6747178cd9f92f73b6c6934c
+
+###
+
+DELETE http://localhost:3030/api/notes/6747193dd9f92f73b6c6934e
