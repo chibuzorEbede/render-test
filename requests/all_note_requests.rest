@@ -3,8 +3,8 @@ Content-Type: application/json
 
 {
     
-    "content": "what is the nature of reality?",
-    "important": false
+    "content": "You have to ask yourself, is this Niggerlicious or is this voodo.",
+    "important": true
 }
 
 ###
@@ -12,8 +12,19 @@ Content-Type: application/json
 GET http://localhost:3030/api/notes
 
 ###
-GET http://localhost:3030/api/notes/6747178cd9f92f73b6c6934c
+GET http://localhost:3030/api/notes/rdra  
 
 ###
 
-DELETE http://localhost:3030/api/notes/6747193dd9f92f73b6c6934e
+DELETE http://localhost:3030/api/notes/67af553084ccb69233966831
+
+###
+
+PUT http://localhost:3030/api/notes/67517381f4a5e7b789947f35
+Content-Type: application/json
+
+{
+    
+    "content": "You already know the answer, don't you?",
+    "important": false
+}
